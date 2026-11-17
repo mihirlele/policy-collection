@@ -133,7 +133,7 @@ metadata:
  name: hub-pvc-backup
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
 data:
  cacheCapacity: 2Gi
  retain_last: '5'
@@ -160,7 +160,7 @@ metadata:
  name: hub-pvc-backup
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
 data:
  customCA_secretName: tls-secret
  customCA_configMapName: tls-configmap-name
@@ -176,7 +176,7 @@ metadata:
  name: hub-pvc-backup
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
 data:
  storageClassName: my-sc-name
  volumeSnapshotClassName: my-vsc-name
@@ -208,7 +208,7 @@ metadata:
  name: hub-pvc-backup-ns-1-my-pvc
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
 data:
  cacheCapacity: 1Gi
  copyMethod: Snapshot
@@ -235,7 +235,7 @@ metadata:
  name: acm-hub-pvc-backup-restic-secret
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
 data:
  AWS_ACCESS_KEY_ID: a2V5
  AWS_SECRET_ACCESS_KEY: a2V5
@@ -260,7 +260,7 @@ metadata:
  name: hub-pvc-backup-mongo-storage
  namespace: pacman-ns
  labels:
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
 data:
  resources.accessModes: ReadWriteOnce
  resources.requests.storage: 8Gi
@@ -281,7 +281,7 @@ metadata:
  namespace: open-cluster-management-backup
  labels:
    app: hub-pvc-backup-pvcs
-   cluster.open-cluster-management.io/backup: gh
+   cluster.open-cluster-management.io/backup: global-hub
  data:
  pvcs: 'pacman-restore#mongo-storage##pacman-vb#mongo-storage##pacman#mongo-storage'
 ```
@@ -294,10 +294,10 @@ Secret, the per-PVC `hub-pvc-backup-<pvc-name>` ConfigMaps and the
 `hub-pvc-backup-pvcs` ConfigMap) are labeled with:
 
 ```yaml
-cluster.open-cluster-management.io/backup: gh
+cluster.open-cluster-management.io/backup: global-hub
 ```
 
-The label value `gh` (instead of `cluster-activation`) is intentional: it keeps
+The label value `global-hub` (instead of `cluster-activation`) is intentional: it keeps
 these resources out of the managed cluster activation data
 (`veleroManagedClustersBackupName`) and puts them into the generic resources and
 credentials backups instead. As a result, they can be restored on the passive hub
@@ -327,7 +327,7 @@ Notes:
 - If you create the `hub-pvc-backup` ConfigMap, the
   `acm-hub-pvc-backup-restic-secret` Secret or a per-PVC
   `hub-pvc-backup-<pvc-ns>-<pvc-name>` override ConfigMap yourself, label them
-  with `cluster.open-cluster-management.io/backup: gh` as shown in the examples
+  with `cluster.open-cluster-management.io/backup: global-hub` as shown in the examples
   above. The `check-hub-storage-configmap` policy reports a violation if these
   resources use a different backup label.
 - When both restore passes are used on a cluster that was already restored, set

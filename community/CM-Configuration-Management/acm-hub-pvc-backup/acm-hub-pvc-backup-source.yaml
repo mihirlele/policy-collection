@@ -82,7 +82,7 @@ spec:
                         name: {{ $pvc_config_info_name }}
                         namespace: {{ $pvc.metadata.namespace }}
                         labels:
-                          cluster.open-cluster-management.io/backup: gh
+                          cluster.open-cluster-management.io/backup: global-hub
                           cluster.open-cluster-management.io/backup-pvc: {{ $pvc.metadata.name }}
                       data:
                         {{- if not ( eq  $pvc.spec.storageClassName "") }}
@@ -236,7 +236,7 @@ spec:
                         name: {{ $volsync_pvcs }}
                         namespace: {{ $ns }}
                         labels:
-                          cluster.open-cluster-management.io/backup: gh
+                          cluster.open-cluster-management.io/backup: global-hub
                           app: {{ $volsync_pvcs }}
                       data:
                         pvcs: {{ trimAll "##" $volsync_pvcs_str }}
