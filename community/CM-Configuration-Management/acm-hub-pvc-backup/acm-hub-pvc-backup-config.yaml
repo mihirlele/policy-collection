@@ -3,6 +3,8 @@ kind: Policy
 metadata:
   name: acm-hub-pvc-backup-config
   namespace: open-cluster-management-backup
+  labels:
+    cluster.open-cluster-management.io/backup: global-hub
   annotations:
     policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
     policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring

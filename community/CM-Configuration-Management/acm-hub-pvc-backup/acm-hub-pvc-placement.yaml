@@ -4,6 +4,8 @@ kind: Placement
 metadata:
   name: acm-hub-pvc-placement
   namespace: open-cluster-management-backup
+  labels:
+    cluster.open-cluster-management.io/backup: global-hub
 spec:
   predicates:
     - requiredClusterSelector:
@@ -26,6 +28,8 @@ kind: PlacementBinding
 metadata:
   name: acm-hub-pvc-placement
   namespace: open-cluster-management-backup
+  labels:
+    cluster.open-cluster-management.io/backup: global-hub
 placementRef:
   name: acm-hub-pvc-placement
   apiGroup: cluster.open-cluster-management.io

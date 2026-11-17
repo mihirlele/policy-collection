@@ -436,6 +436,22 @@ ACM user, on Restore hub:
 
 
 
+## Backup and restore of the hub PVC backup policy resources
+
+All top-level policy resources in this directory — the three Policies (`acm-hub-pvc-backup-config`, `acm-hub-pvc-backup-source`, `acm-hub-pvc-backup-destination`), the `acm-hub-pvc-backup-policyset` PolicySet, and the `Placement` and `PlacementBinding` in `acm-hub-pvc-placement.yaml` — carry the label `cluster.open-cluster-management.io/backup: global-hub`.
+
+This label matters for hub backup and restore:
+
+- The `acm-resources-generic-schedule` Velero schedule selects resources with the `cluster.open-cluster-management.io/backup` label (any value) and does not exclude the `open-cluster-management-backup` namespace, so these policies are included in the generic backup alongside the VolSync ConfigMaps and Secrets.
+- On restore, the generic restore (pass 1, before cluster activation) restores resources labeled `cluster.open-cluster-management.io/backup` with values other than `cluster-activation`. Because the value is `global-hub`, the policies (including the destination policy) are restored on the passive hub **before** cluster activation — exactly when the destination policy must run to create the `ReplicationDestination` and the Global Hub postgres PVC, so VolSync can populate the PVC before pass 2 activates Global Hub onto it.
+
+Caveats:
+
+- All six objects must carry the label. If any is missing, the chain breaks on the passive hub. The `ConfigurationPolicy` objects inside the policy-templates do not need the label — they are propagated to `local-cluster` by the governance framework, not backed up directly.
+- The label must be applied on the active hub before the last generic backup you intend to restore from. After labeling, wait for at least one `acm-resources-generic-schedule` backup cycle to complete before running the passive-hub restore.
+- The governance policy framework (the policy controller on `local-cluster`) must be running on the passive hub for the restored policies to be applied. This is standard for an ACM hub.
+
+
 ## References
 - [RHACM Volsync documentation](https://access.redhat.com/login?redirectTo=https%3A%2F%2Faccess.redhat.com%2Fdocumentation%2Fen-us%2Fred_hat_advanced_cluster_management_for_kubernetes%2F2.8%2Fhtml%2Fbusiness_continuity%2Fbusiness-cont-overview%23restic-backup-volsync)
 
