@@ -133,7 +133,7 @@ metadata:
  name: hub-pvc-backup
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
 data:
  cacheCapacity: 2Gi
  retain_last: '5'
@@ -160,7 +160,7 @@ metadata:
  name: hub-pvc-backup
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
 data:
  customCA_secretName: tls-secret
  customCA_configMapName: tls-configmap-name
@@ -176,7 +176,7 @@ metadata:
  name: hub-pvc-backup
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
 data:
  storageClassName: my-sc-name
  volumeSnapshotClassName: my-vsc-name
@@ -208,7 +208,7 @@ metadata:
  name: hub-pvc-backup-ns-1-my-pvc
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
 data:
  cacheCapacity: 1Gi
  copyMethod: Snapshot
@@ -235,7 +235,7 @@ metadata:
  name: acm-hub-pvc-backup-restic-secret
  namespace: open-cluster-management-backup
  labels:
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
 data:
  AWS_ACCESS_KEY_ID: a2V5
  AWS_SECRET_ACCESS_KEY: a2V5
@@ -260,7 +260,7 @@ metadata:
  name: hub-pvc-backup-mongo-storage
  namespace: pacman-ns
  labels:
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
 data:
  resources.accessModes: ReadWriteOnce
  resources.requests.storage: 8Gi
@@ -281,10 +281,59 @@ metadata:
  namespace: open-cluster-management-backup
  labels:
    app: hub-pvc-backup-pvcs
-   cluster.open-cluster-management.io/backup: cluster-activation
+   cluster.open-cluster-management.io/backup: gh
  data:
  pvcs: 'pacman-restore#mongo-storage##pacman-vb#mongo-storage##pacman#mongo-storage'
 ```
+
+## Backup label and restore ordering (two-step restore)
+
+All VolSync configuration resources required to recreate the hub PVCs on the
+restore hub (the `hub-pvc-backup` ConfigMap, the `acm-hub-pvc-backup-restic-secret`
+Secret, the per-PVC `hub-pvc-backup-<pvc-name>` ConfigMaps and the
+`hub-pvc-backup-pvcs` ConfigMap) are labeled with:
+
+```yaml
+cluster.open-cluster-management.io/backup: gh
+```
+
+The label value `gh` (instead of `cluster-activation`) is intentional: it keeps
+these resources out of the managed cluster activation data
+(`veleroManagedClustersBackupName`) and puts them into the generic resources and
+credentials backups instead. As a result, they can be restored on the passive hub
+*before* the activation data, which lets the `acm-hub-pvc-backup-destination`
+policy create the VolSync `ReplicationDestination` resources and sync the PVCs
+before applications that consume those PVCs (for example the Multicluster Global
+Hub PostgreSQL PVC) are activated. This avoids a race condition where the
+application binds a freshly created empty PVC before the ReplicationDestination
+copies the data from the backup hub (see
+[ACM-47405](https://redhat.atlassian.net/browse/ACM-47405)).
+
+To restore a passive hub, use a two-step restore:
+
+1. Apply a first `Restore.cluster.open-cluster-management.io` resource with
+   `veleroManagedClustersBackupName: skip` (and
+   `veleroCredentialsBackupName: latest`, `veleroResourcesBackupName: latest`).
+   This restores the VolSync configuration resources, the
+   `acm-hub-pvc-backup-destination` policies create the `ReplicationDestination`
+   resources and VolSync syncs the backed up PVC data. Wait for the PVCs to be
+   created and to reach the `Bound` phase.
+2. Apply a second `Restore.cluster.open-cluster-management.io` resource with
+   `veleroManagedClustersBackupName: latest` (or pointing to a specific backup
+   name). This restores the managed cluster activation data, including the
+   application resources that consume the synced PVCs.
+
+Notes:
+- If you create the `hub-pvc-backup` ConfigMap, the
+  `acm-hub-pvc-backup-restic-secret` Secret or a per-PVC
+  `hub-pvc-backup-<pvc-ns>-<pvc-name>` override ConfigMap yourself, label them
+  with `cluster.open-cluster-management.io/backup: gh` as shown in the examples
+  above. The `check-hub-storage-configmap` policy reports a violation if these
+  resources use a different backup label.
+- When both restore passes are used on a cluster that was already restored, set
+  `cleanupBeforeRestore: None` to avoid removing previously restored resources.
+- After the restore, disable or remove the `BackupSchedule` on the original
+  backup hub to avoid the passive and active hubs both writing backups.
 
 ## hub-pvc-restore ConfigMap
 

@@ -88,7 +88,7 @@ spec:
                   name: {{ $volsync_map }}
                   namespace: {{ $ns }}
                   labels:
-                    cluster.open-cluster-management.io/backup: cluster-activation
+                    cluster.open-cluster-management.io/backup: gh
             - complianceType: musthave
               objectDefinition:
                 apiVersion: v1
@@ -97,7 +97,7 @@ spec:
                   name: {{ $volsync_secret }}
                   namespace: {{ $ns }}
                   labels:
-                    cluster.open-cluster-management.io/backup: cluster-activation
+                    cluster.open-cluster-management.io/backup: gh
                 type: Opaque
             {{- end }}
           remediationAction: inform
